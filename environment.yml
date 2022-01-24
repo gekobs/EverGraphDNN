@@ -1,0 +1,11 @@
+name: evergraph
+channels:
+    - conda-forge
+dependencies:
+    - python>=3.8
+    - pyaml
+    - awkward
+    - pyarrow
+    - rich
+    - matplotlib
+    - tensorflow==2.5
