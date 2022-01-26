@@ -1,4 +1,7 @@
 import awkward
+import numpy
+import os
+import math
 
 import tensorflow as tf
 from tensorflow import keras
@@ -7,12 +10,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 from evergraph.utils.misc_utils import update_dict
+from evergraph.algorithms.losses import selective_mse
 
 DUMMY_VALUE = -999.
 DEFAULT_OPTIONS = {
-        "targets" : ["target_has_HggHiggs", "target_has_HttHiggs"],
+        "targets" : ["target_has_HttHiggs", "target_has_HggHiggs", "target_HggHiggs_pt"],
         "learning_rate" : 0.001,
-        "model" : "1d_cnn"
+        "model" : {
+            "type" : "graph_cnn",
+            "n_tuple" : 2
+        }
 }
 
 class DNNHelper():
@@ -45,23 +52,41 @@ class DNNHelper():
 
         """
         self.f_input = self.input_dir + "/data.parquet"
-        events = awkward.from_parquet(self.f_input)
+        self.events = awkward.from_parquet(self.f_input)
 
-        self.n_events = len(events)
-        self.n_objects = len(events.objects[0])
-        self.n_object_features = len(events.objects[0][0])
-        self.labels = [x for x in events.fields if "target" in x and x in self.config["targets"]]
+        self.n_events = len(self.events)
+        if self.config["model"]["type"] == "graph_cnn":
+            self.n_objects = math.comb(len(self.events.objects[0]), self.config["model"]["n_tuple"])
+            self.n_object_features = self.config["model"]["n_tuple"] * len(self.events.objects[0][0])
+        else:
+            self.n_objects = len(self.events.objects[0])
+            self.n_object_features = len(self.events.objects[0][0])
+
+        self.labels = [x for x in self.events.fields if "target" in x and x in self.config["targets"]]
         self.n_labels = len(self.labels)
 
-        logger.debug("[DNNHelper : load_data] Loaded %d events from file '%s'." % (self.n_events, self.f_input))
+        logger.debug("[DNNHelper : load_data] Loaded %d self.events from file '%s'." % (self.n_events, self.f_input))
         logger.debug("[DNNHelper : load_data] Found %d objects per event with %d features per object." % (self.n_objects, self.n_object_features))
         logger.debug("[DNNHelper : load_data] Found %d targets:" % (self.n_labels))
         for x in self.labels:
-            logger.debug("\t %s : mean (std dev) of %.4f (%.4f)" % (x, awkward.mean(events[x][events[x] != DUMMY_VALUE]), awkward.std(events[x][events[x] != DUMMY_VALUE])))
+            logger.debug("\t %s : mean (std dev) of %.4f (%.4f)" % (x, awkward.mean(self.events[x][self.events[x] != DUMMY_VALUE]), awkward.std(self.events[x][self.events[x] != DUMMY_VALUE])))
 
 
-       
-        self.X = tf.convert_to_tensor(events["objects"])
+        if self.config["model"]["type"] == "graph_cnn":
+            ntuples = awkward.combinations(
+                    self.events["objects"],
+                    self.config["model"]["n_tuple"],
+                    axis=1,
+                    fields=["obj_%d" % x for x in range(self.config["model"]["n_tuple"])]
+            )
+            ntuples = awkward.concatenate(
+                    [ntuples["obj_%d" % x] for x in range(self.config["model"]["n_tuple"])],
+                    axis=2
+            )
+            self.X = tf.convert_to_tensor(ntuples)
+
+        else:    
+            self.X = tf.convert_to_tensor(self.events["objects"])
 
         self.X = tf.where(
                 (tf.math.is_nan(self.X)) | (tf.math.is_inf(self.X)),
@@ -71,21 +96,25 @@ class DNNHelper():
 
         self.y = {}
         for x in self.labels:
-            self.y["output_%s" % x] = tf.convert_to_tensor(events[x])
+            self.y["output_%s" % x] = tf.convert_to_tensor(self.events[x])
 
     def create_model(self):
         """
 
         """
         input_layer = keras.layers.Input(shape = (self.n_objects, self.n_object_features,), name = "input")
-        if self.config["model"] == "1d_cnn":
+        if self.config["model"]["type"] == "1d_cnn" or self.config["model"]["type"] == "graph_cnn":
             layer = input_layer
-            for i in range(2):
-                layer = keras.layers.Conv1D(32, 2, activation="relu", name = "layer_%d" % i)(layer)
+            for i in range(10):
+                layer = keras.layers.Conv1D(8, self.config["model"]["n_tuple"], activation="relu", name = "layer_%d" % i)(layer)
             layer = keras.layers.Flatten()(layer)
-            for i in range(2):
-                layer = keras.layers.Dense(50, activation="relu", name = "dense_%d" % i)(layer)
-            
+            for i in range(3):
+                layer = keras.layers.Dense(25, activation="relu", name = "dense_%d" % i)(layer)
+ 
+        #elif self.config["model"] = "graph_cnn":
+        #    layer = input_layer
+        #    for i in range(2):
+        #        layer = 
 
         outputs = {}
         losses = {}
@@ -98,7 +127,7 @@ class DNNHelper():
             if "has" in x:
                 losses["output_%s" % x] = keras.losses.BinaryCrossentropy()
             else:
-                losses["output_%s" % x] = keras.losses.MeanSquaredError()
+                losses["output_%s" % x] = selective_mse(DUMMY_VALUE) 
 
         self.model = keras.models.Model(inputs = input_layer, outputs = outputs)
         self.model.summary()
@@ -116,7 +145,7 @@ class DNNHelper():
         self.model.fit(
                 self.X,
                 self.y,
-                batch_size = 1024,
+                batch_size = 512,
                 epochs = 10
         )
 
@@ -124,11 +153,18 @@ class DNNHelper():
         """
 
         """
+        predictions = self.model.predict(self.X, batch_size = 10000)
+        for pred, values in predictions.items():
+            array = awkward.from_numpy(numpy.array(values).flatten())
+            self.events[pred] = array
 
+
+        
 
     def save(self):
         """
 
         """
 
-
+        os.system("mkdir -p %s" % self.output_dir)
+        awkward.to_parquet(self.events, self.output_dir + "/data_and_preds.parquet")
