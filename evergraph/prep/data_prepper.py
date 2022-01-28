@@ -67,7 +67,7 @@ class DataPrepper():
         logger.debug("[DataPrepper : load_data] Loaded %d events from file '%s' and summary json '%s'" % (self.n_events["total"], self.f_events, self.f_summary))
 
         if self.short:
-            idx = numpy.random.randint(low = 0, high = self.n_events["total"], size = 10000)
+            idx = numpy.random.randint(low = 0, high = self.n_events["total"], size = 100000)
             events = events[idx]
             self.n_events["total"] = len(events)
 

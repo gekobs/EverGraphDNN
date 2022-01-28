@@ -14,8 +14,15 @@ from evergraph.algorithms.losses import selective_mse
 
 DUMMY_VALUE = -999.
 DEFAULT_OPTIONS = {
-        "targets" : ["target_has_HttHiggs", "target_has_HggHiggs", "target_HggHiggs_pt"],
-        "learning_rate" : 0.001,
+        "targets" : [
+            "target_has_HggHiggs", "target_HggHiggs_pt", "target_HggHiggs_eta", "target_HggHiggs_phi", "target_HggHiggs_mass",
+            "target_has_HbbHiggs", "target_HbbHiggs_pt", "target_HbbHiggs_eta", "target_HbbHiggs_phi", "target_HbbHiggs_mass",
+            "target_has_HttHiggs", "target_HttHiggs_pt", "target_HttHiggs_eta", "target_HttHiggs_phi", "target_HttHiggs_mass",
+            "target_has_HwwHiggs", "target_HwwHiggs_pt", "target_HwwHiggs_eta", "target_HwwHiggs_phi", "target_HwwHiggs_mass",
+            "target_has_Top_1", "target_Top_1_pt", "target_Top_1_eta", "target_Top_1_phi", "target_Top_1_mass",
+            "target_has_Top_2", "target_Top_2_pt", "target_Top_2_eta", "target_Top_2_phi", "target_Top_2_mass",
+        ],
+        "learning_rate" : 0.0005,
         "model" : {
             "type" : "graph_cnn",
             "n_tuple" : 2
@@ -105,11 +112,14 @@ class DNNHelper():
         input_layer = keras.layers.Input(shape = (self.n_objects, self.n_object_features,), name = "input")
         if self.config["model"]["type"] == "1d_cnn" or self.config["model"]["type"] == "graph_cnn":
             layer = input_layer
-            for i in range(10):
-                layer = keras.layers.Conv1D(8, self.config["model"]["n_tuple"], activation="relu", name = "layer_%d" % i)(layer)
+            for i in range(5):
+                layer = keras.layers.Conv1D(64, min(i+1,2), activation="elu", name = "layer_%d" % i)(layer)
+                layer = keras.layers.BatchNormalization(name = "batch_norm_cnn_%d" % i)(layer)
             layer = keras.layers.Flatten()(layer)
+            layer = keras.layers.Dense(32, activation="elu", name = "intermediate")(layer)
             for i in range(3):
-                layer = keras.layers.Dense(25, activation="relu", name = "dense_%d" % i)(layer)
+                layer = keras.layers.BatchNormalization(name = "batch_norm_dense_%d" % i)(layer)
+                layer = keras.layers.Dense(100, activation="elu", name = "dense_%d" % i)(layer)
  
         #elif self.config["model"] = "graph_cnn":
         #    layer = input_layer
@@ -146,7 +156,7 @@ class DNNHelper():
                 self.X,
                 self.y,
                 batch_size = 512,
-                epochs = 10
+                epochs = 100
         )
 
     def evaluate(self):
