@@ -79,14 +79,14 @@ class EverGraphTagger(Tagger):
             )
  
 
-    def calculate_selection(self, syst_tag, syst_events):
+    def calculate_selection(self, events):
         # Electrons
         electron_cut = lepton_selections.select_electrons(
-                electrons = syst_events.Electron,
+                electrons = events.Electron,
                 options = self.options["electrons"],
                 clean = {
                     "photons" : {
-                        "objects" : syst_events.Diphoton.Photon,
+                        "objects" : events.Diphoton.Photon,
                         "min_dr" : self.options["electrons"]["dr_photons"]
                     }
                 },
@@ -95,18 +95,18 @@ class EverGraphTagger(Tagger):
         )
 
         electrons = awkward_utils.add_field(
-                events = syst_events,
+                events = events,
                 name = "SelectedElectron",
-                data = syst_events.Electron[electron_cut]
+                data = events.Electron[electron_cut]
         )
 
         # Muons
         muon_cut = lepton_selections.select_muons(
-                muons = syst_events.Muon,
+                muons = events.Muon,
                 options = self.options["muons"],
                 clean = {
                     "photons" : {
-                        "objects" : syst_events.Diphoton.Photon,
+                        "objects" : events.Diphoton.Photon,
                         "min_dr" : self.options["muons"]["dr_photons"]
                     }
                 },
@@ -115,26 +115,26 @@ class EverGraphTagger(Tagger):
         )
 
         muons = awkward_utils.add_field(
-                events = syst_events,
+                events = events,
                 name = "SelectedMuon",
-                data = syst_events.Muon[muon_cut]
+                data = events.Muon[muon_cut]
         )
 
         # Taus
         tau_cut = tau_selections.select_taus(
-                taus = syst_events.Tau,
+                taus = events.Tau,
                 options = self.options["taus"],
                 clean = {
                     "photons" : {
-                        "objects" : syst_events.Diphoton.Photon,
+                        "objects" : events.Diphoton.Photon,
                         "min_dr" : self.options["taus"]["dr_photons"]
                     },
                     "electrons" : {
-                        "objects" : syst_events.SelectedElectron,
+                        "objects" : events.SelectedElectron,
                         "min_dr" : self.options["taus"]["dr_electrons"]
                     },
                     "muons" : {
-                        "objects" : syst_events.SelectedMuon,
+                        "objects" : events.SelectedMuon,
                         "min_dr" : self.options["taus"]["dr_muons"]
                     }
                 },
@@ -143,30 +143,30 @@ class EverGraphTagger(Tagger):
         )
 
         taus = awkward_utils.add_field(
-                events = syst_events,
+                events = events,
                 name = "AnalysisTau",
-                data = syst_events.Tau[tau_cut]
+                data = events.Tau[tau_cut]
         )
 
         # Fat jets
         fatjet_cut = fatjet_selections.select_fatjets(
-                fatjets = syst_events.FatJet,
+                fatjets = events.FatJet,
                 options = self.options["fatjets"],
                 clean = {
                     "photons" : {
-                        "objects" : syst_events.Diphoton.Photon,
+                        "objects" : events.Diphoton.Photon,
                         "min_dr" : self.options["jets"]["dr_photons"]
                     },
                     "electrons" : {
-                        "objects" : syst_events.SelectedElectron,
+                        "objects" : events.SelectedElectron,
                         "min_dr" : self.options["jets"]["dr_electrons"]
                     },
                     "muons" : {
-                        "objects" : syst_events.SelectedMuon,
+                        "objects" : events.SelectedMuon,
                         "min_dr" : self.options["jets"]["dr_muons"]
                     },
                     "taus" : {
-                        "objects" : syst_events.AnalysisTau,
+                        "objects" : events.AnalysisTau,
                         "min_dr" : self.options["jets"]["dr_taus"]
                     }
                 },
@@ -175,30 +175,30 @@ class EverGraphTagger(Tagger):
         )
 
         fatjets = awkward_utils.add_field(
-                events = syst_events,
+                events = events,
                 name = "SelectedFatJet",
-                data = syst_events.FatJet[fatjet_cut]
+                data = events.FatJet[fatjet_cut]
         )       
 
         # Jets
         jet_cut = jet_selections.select_jets(
-                jets = syst_events.Jet,
+                jets = events.Jet,
                 options = self.options["jets"],
                 clean = {
                     "photons" : {
-                        "objects" : syst_events.Diphoton.Photon,
+                        "objects" : events.Diphoton.Photon,
                         "min_dr" : self.options["jets"]["dr_photons"]
                     },
                     "electrons" : {
-                        "objects" : syst_events.SelectedElectron,
+                        "objects" : events.SelectedElectron,
                         "min_dr" : self.options["jets"]["dr_electrons"]
                     },
                     "muons" : {
-                        "objects" : syst_events.SelectedMuon,
+                        "objects" : events.SelectedMuon,
                         "min_dr" : self.options["jets"]["dr_muons"]
                     },
                     "taus" : {
-                        "objects" : syst_events.AnalysisTau,
+                        "objects" : events.AnalysisTau,
                         "min_dr" : self.options["jets"]["dr_taus"]
                     }
                 },
@@ -207,9 +207,9 @@ class EverGraphTagger(Tagger):
         )
 
         jets = awkward_utils.add_field(
-                events = syst_events,
+                events = events,
                 name = "SelectedJet",
-                data = syst_events.Jet[jet_cut]
+                data = events.Jet[jet_cut]
         )
 
         bjets = jets[awkward.argsort(jets.btagDeepFlavB, axis = 1, ascending = False)]
@@ -257,7 +257,7 @@ class EverGraphTagger(Tagger):
 
         for objects, name in zip([leptons, jets, fatjets], ["lepton", "jet", "fatjet"]):
             awkward_utils.add_object_fields(
-                    events = syst_events,
+                    events = events,
                     name = name,
                     objects = objects,
                     n_objects = 8 if name == "jet" else 4,
@@ -265,46 +265,46 @@ class EverGraphTagger(Tagger):
             )
 
 
-        awkward_utils.add_field(syst_events, ("Diphoton", "pt_mgg"), syst_events.Diphoton.pt / syst_events.Diphoton.mass)
-        awkward_utils.add_field(syst_events, ("LeadPhoton", "pt_mgg"), syst_events.LeadPhoton.pt / syst_events.Diphoton.mass)
-        awkward_utils.add_field(syst_events, ("SubleadPhoton", "pt_mgg"), syst_events.SubleadPhoton.pt / syst_events.Diphoton.mass)
+        awkward_utils.add_field(events, ("Diphoton", "pt_mgg"), events.Diphoton.pt / events.Diphoton.mass)
+        awkward_utils.add_field(events, ("LeadPhoton", "pt_mgg"), events.LeadPhoton.pt / events.Diphoton.mass)
+        awkward_utils.add_field(events, ("SubleadPhoton", "pt_mgg"), events.SubleadPhoton.pt / events.Diphoton.mass)
 
         # Gen info
         if not self.is_data:
-            gen_hbb = gen_selections.select_x_to_yz(syst_events.GenPart, 25, 5, 5)
-            gen_hww = gen_selections.select_x_to_yz(syst_events.GenPart, 25, 24, 24)
-            gen_htt = gen_selections.select_x_to_yz(syst_events.GenPart, 25, 15, 15)
+            gen_hbb = gen_selections.select_x_to_yz(events.GenPart, 25, 5, 5)
+            gen_hww = gen_selections.select_x_to_yz(events.GenPart, 25, 24, 24)
+            gen_htt = gen_selections.select_x_to_yz(events.GenPart, 25, 15, 15)
 
-            gen_top = gen_selections.select_x_to_yz(syst_events.GenPart, 6, 5, 24)
+            gen_tops = gen_selections.select_x_to_yz(events.GenPart, 6, 5, 24)
 
-            awkward_utils.add_object_fields(syst_events, "GenHbbHiggs", gen_hbb.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
-            awkward_utils.add_object_fields(syst_events, "GenHwwHiggs", gen_hww.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
-            awkward_utils.add_object_fields(syst_events, "GenHttHiggs", gen_htt.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
-            awkward_utils.add_object_fields(syst_events, "GenTop", gen_top.GenParent, n_objects = 2)
+            awkward_utils.add_object_fields(events, "GenHbbHiggs", gen_hbb.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
+            awkward_utils.add_object_fields(events, "GenHwwHiggs", gen_hww.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
+            awkward_utils.add_object_fields(events, "GenHttHiggs", gen_htt.GenParent, n_objects = 1, fields = ["pt", "eta", "phi", "mass"])
+            awkward_utils.add_object_fields(events, "GenTop", gen_top.GenParent, n_objects = 2)
 
         # Preselection
         n_electrons = awkward.num(electrons)
-        awkward_utils.add_field(syst_events, "n_electrons", n_electrons)
+        awkward_utils.add_field(events, "n_electrons", n_electrons)
 
         n_muons = awkward.num(muons)
-        awkward_utils.add_field(syst_events, "n_muons", n_muons)
+        awkward_utils.add_field(events, "n_muons", n_muons)
 
         n_leptons = n_electrons + n_muons
-        awkward_utils.add_field(syst_events, "n_leptons", n_leptons)
+        awkward_utils.add_field(events, "n_leptons", n_leptons)
 
         n_taus = awkward.num(taus)
-        awkward_utils.add_field(syst_events, "n_taus", n_taus)
+        awkward_utils.add_field(events, "n_taus", n_taus)
 
         n_lep_tau = n_leptons + n_taus
-        awkward_utils.add_field(syst_events, "n_lep_tau", n_lep_tau)
+        awkward_utils.add_field(events, "n_lep_tau", n_lep_tau)
 
         n_jets = awkward.num(jets)
-        awkward_utils.add_field(syst_events, "n_jets", n_jets)
+        awkward_utils.add_field(events, "n_jets", n_jets)
 
         n_fatjets = awkward.num(fatjets)
-        awkward_utils.add_field(syst_events, "n_fatjets", n_fatjets)
+        awkward_utils.add_field(events, "n_fatjets", n_fatjets)
 
-        pho_idmva_cut = (syst_events.LeadPhoton.mvaID > -0.7) & (syst_events.SubleadPhoton.mvaID > -0.7)
+        pho_idmva_cut = (events.LeadPhoton.mvaID > -0.7) & (events.SubleadPhoton.mvaID > -0.7)
 
         presel_cut = ((n_lep_tau >= 1) | (n_jets >= 2) | (n_fatjets >= 1)) & z_veto & pho_idmva_cut 
 
@@ -313,7 +313,7 @@ class EverGraphTagger(Tagger):
             results = [presel_cut]
         )
 
-        return presel_cut, syst_events
+        return presel_cut, events
     
 
 
