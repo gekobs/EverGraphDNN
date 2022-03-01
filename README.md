@@ -39,5 +39,5 @@ this graph CNN will be trained with the following targets:
 
 
 TODO items:
-[ ] Make training targets and network details configurable through `json`
-[ ] Develop `evergraph/evaluation` tools for assessing performance of graph CNNs
+- [ ] Make training targets and network details configurable through `json`
+- [ ] Develop `evergraph/evaluation` tools for assessing performance of graph CNNs
