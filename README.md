@@ -34,6 +34,8 @@ python train.py --input_dir "hadronic_1Mar2022/" --output_dir "hadronic_1Mar2022
 ```
 this graph CNN will be trained with the following targets:
 - whether the event has an H->bb pair or not (`"target_has_HbbHiggs"`)
+
+and optionally you can add other targets through `evergraph/algorithms/dnn_helper.py`, e.g.:
 - the pt and eta of the H->bb Higgs
 - the pt and eta of the H->gg Higgs (as a sanity check we can compare this with the pt and eta we get from adding the four vectors of the photons)
 

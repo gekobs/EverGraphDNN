@@ -22,8 +22,9 @@ DUMMY_VALUE = -999.
 DEFAULT_OPTIONS = {
         "targets" : [
             #"target_has_HggHiggs",
-            "target_HggHiggs_pt", "target_HggHiggs_eta",
-            "target_has_HbbHiggs", "target_HbbHiggs_pt", "target_HbbHiggs_eta",
+            "target_has_HbbHiggs",
+            #"target_HggHiggs_pt", "target_HggHiggs_eta",
+            #"target_has_HbbHiggs", "target_HbbHiggs_pt", "target_HbbHiggs_eta",
             #"target_has_HggHiggs", "target_HggHiggs_pt", "target_HggHiggs_eta", "target_HggHiggs_phi", "target_HggHiggs_mass",
             #"target_has_HbbHiggs", "target_HbbHiggs_pt", "target_HbbHiggs_eta", "target_HbbHiggs_phi", "target_HbbHiggs_mass",
             #"target_has_HttHiggs", "target_HttHiggs_pt", "target_HttHiggs_eta", "target_HttHiggs_phi", "target_HttHiggs_mass",
@@ -105,19 +106,19 @@ class DNNHelper():
         if self.config["model"]["type"] == "1d_cnn" or self.config["model"]["type"] == "graph_cnn":
             layer = input_layer
             for i in range(4):
-                layer = keras.layers.Conv1D(128, 1, activation="elu", name = "layer_%d" % i)(layer)
+                layer = keras.layers.Conv1D(16, 1, activation="elu", name = "layer_%d" % i)(layer)
                 #layer = keras.layers.BatchNormalization(name = "batch_norm_cnn_%d" % i)(layer)
                 #layer = keras.layers.Dropout(0.1)(layer)
-            for i in range(6):
+            for i in range(5):
                 layer = keras.layers.Conv1D(32*((i+1)*2), 2, strides = 2, activation="elu", name = "layer_2_%d" % i)(layer)
                 #layer = keras.layers.BatchNormalization(name = "batch_norm_cnn_2_%d" % i)(layer)
                 #layer = keras.layers.Dropout(0.1)(layer)
             layer = keras.layers.Flatten()(layer)
-            layer = keras.layers.Dense(256, activation="elu", name = "intermediate")(layer)
+            layer = keras.layers.Dense(128, activation="elu", name = "intermediate")(layer)
             for i in range(3):
                 #layer = keras.layers.BatchNormalization(name = "batch_norm_dense_%d" % i)(layer)
                 #layer = keras.layers.Dropout(0.1)(layer)
-                layer = keras.layers.Dense(256, activation="elu", name = "dense_%d" % i)(layer)
+                layer = keras.layers.Dense(128, activation="elu", name = "dense_%d" % i)(layer)
  
         #elif self.config["model"] = "graph_cnn":
         #    layer = input_layer
@@ -172,7 +173,6 @@ class DNNHelper():
                     pred = awkward.flatten(predictions[label])
                     target = awkward.Array(array.numpy())
                     if "_has_" in label:
-                        continue
                         auc = metrics.roc_auc_score(target, pred)
                         logger.debug("[DNNHelper : train] For target '%s', AUC is %.3f." % (label, auc))
                         continue
