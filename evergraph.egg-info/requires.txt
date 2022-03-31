@@ -1,0 +1,7 @@
+pyaml
+awkward
+pyarrow
+rich
+matplotlib
+tensorflow
+scikit-learn

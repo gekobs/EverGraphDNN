@@ -1,0 +1,8 @@
+README.md
+setup.py
+evergraph/__init__.py
+evergraph.egg-info/PKG-INFO
+evergraph.egg-info/SOURCES.txt
+evergraph.egg-info/dependency_links.txt
+evergraph.egg-info/requires.txt
+evergraph.egg-info/top_level.txt
