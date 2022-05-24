@@ -1,0 +1,27 @@
+{
+    "config": {
+        "background": [
+            "ttH_M125"
+        ],
+        "mva": {
+            "early_stopping": true,
+            "early_stopping_rounds": 5,
+            "n_trees": 500,
+            "param": {
+                "eta": 0.2,
+                "eval_metric": "error",
+                "max_depth": 4,
+                "nthread": 12,
+                "objective": "binary:logistic"
+            }
+        },
+        "signal": [
+            "ttHH_ggbb"
+        ],
+        "targets": [
+            "target_has_HbbHiggs"
+        ],
+        "training_features": []
+    },
+    "weights": "output/.xgb"
+}

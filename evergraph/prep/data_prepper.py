@@ -230,8 +230,6 @@ class DataPrepper():
                     events["jet_%d_btagDeepFlavB" % i],
                     DUMMY_VALUE * awkward.ones_like(events["object_%d_btag" % idx])
                 )
-
-
                 events["object_%d_charge" % idx] = DUMMY_VALUE * awkward.ones_like(events["object_%d_charge" % idx])
                 events["object_%d_is_jet" % idx] = awkward.where(
                     events["jet_%d_pt" % i] > 0.,
